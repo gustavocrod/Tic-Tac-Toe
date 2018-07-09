@@ -1,4 +1,6 @@
-import sys
+"""
+ xesquedele crod
+"""
 from Game import Game
 from util import *
 

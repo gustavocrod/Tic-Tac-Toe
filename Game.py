@@ -4,7 +4,7 @@
 
 """
 
-import numpy as np
+from util import *
 
 class Game:
     """
@@ -25,8 +25,11 @@ class Game:
         self.n = n
         self.k = k
         self.formatState(start_state)
-        self.bot = j
-        self.player = 2 if j == 1 else 1
+        self.min = 2 if j == 1 else 1
+        self.max = j #jogador max - bot
+
+        self.player = j
+        self.oponent = 2 if j == 1 else 1
         self.maxDepth = 3
 
 
@@ -52,30 +55,36 @@ class Game:
                     possible_moves.append((i, j))
         return possible_moves
 
-    def calculateChances(self, board, turn):
+
+    def isPLayerWinner(self, state, player):
         """
-        dado o tabuleiro suposto, calcula quantas chances
-        o jogador selecionado ainda tem para ganhar e retorna o seu valor
-        :param board:
-        :param turn:
+        Testa se o "player" eh o vencedor - current player
+        :param state:
+        :param player:
         :return:
         """
-        winning_rows = eval(repr(self.getEndGameStates()))
-        for i in range(self.m):
-            for j in range(self.n):
-                if board[i][j] != 0 and board[i][j] != turn:
-                    forbidden_play = (i, j)
-                    list_remove = list()
-                    for row in winning_rows:
-                        if forbidden_play in row:
-                            list_remove.append(row)
-                    for chance in list_remove:
-                        winning_rows.remove(chance)
+        for i in range(0, self.m):
+            for j in range(0, self.n):
+                row_count = getRightSequence(state, i, j, player, self.n)
+                if row_count == self.k:
+                    return True
 
-        return len(winning_rows)
+                col_count = getBottomSequence(state, i, j, player, self.m)
+                if col_count >= self.k:
+                    return True
+
+                right_diag_count = getRightDiagSequence(state, i, j, player, self.m, self.n)
+                if right_diag_count == self.k:
+                    return True
+
+                left_diag_count = getLeftDiagSequence(state, i, j, player, self.m)
+                if left_diag_count == self.k:
+                    return True
 
     def judge(self, board):
         """
+        HEURISTICA
+
         Verifica o estado final do tabuleiro
         +10 para minha vitoria (meu bot)
         -10 para vitoria do adversario
@@ -83,25 +92,30 @@ class Game:
         :param board:
         :return:
         """
-        winning_rows = list(self.getEndGameStates())
+        utility = 0
+        self.oponent = 2 if self.player == 1 else 1
 
-        winner = None
-        for row in winning_rows:
-            row_win = [board[x][y] for x, y in row]
-            if row_win == [1, 1, 1]:
-                winner = 1
-                break
-            elif row_win == [2, 2, 2]:
-                winner = 2
-                break
-        if winner == self.bot:
-            return 10
-        if winner == None: #empate
-            if self.hasEnded(board):
-                return 0
-            else: #calcula as chances que o jogador da jogada ainda tem pra ganhar
-                return self.calculateChances(board, self.bot) - self.calculateChances(board, self.player)
-        return -10
+        if self.isPLayerWinner(board, self.player):
+            utility += 10
+        elif self.isPLayerWinner(board, self.oponent):
+            utility -= 100
+
+        else:
+            for i in range(0, self.m):
+                for j in range(0, self.n):
+                    utility += getRightSequence(board, i, j, self.player, self.n)
+                    utility += getBottomSequence(board, i, j, self.player, self.m)
+                    utility += getRightDiagSequence(board, i, j, self.player, self.m, self.n)
+                    utility += getLeftDiagSequence(board, i, j, self.player, self.m)
+
+                    utility -= 10 * getRightSequence(board, i, j, self.oponent, self.n)
+                    utility -= 10 * getBottomSequence(board, i, j, self.oponent, self.m)
+                    utility -= 10 * getRightDiagSequence(board, i, j, self.oponent, self.m, self.n)
+                    utility -= 10 * getLeftDiagSequence(board, i, j, self.oponent, self.m)
+
+        return utility
+
+
 
     def hasEnded(self, board):
         """
@@ -110,37 +124,32 @@ class Game:
         :param board:
         :return:
         """
-        winning_rows = list(self.getEndGameStates())
+        valid_actions = self.getValidMoves(board)
         gameover = True
-        for i in range(self.m):
-            for j in range(self.n):
-                if (board[i][j] == 0):
-                    gameover = False
-        for row in winning_rows:
-            row_winner = [board[x][y] for x, y in row]
+        if len(valid_actions) == 0:
+            return gameover
 
-            if row_winner == [1, 1, 1] or row_winner == [2, 2, 2]:
-                gameover = True
-                break
-        return gameover
+        for i in range(0, self.m):
+            for j in range(0, self.n):
+                row_count1 = getRightSequence(board, i, j, 1, self.n)
+                row_count2 = getRightSequence(board, i, j, 2, self.n)
+                if row_count1 == self.k or row_count2 == self.k:
+                    return gameover
 
-    def getEndGameStates(self):
-        """
-        Gera todas as combinacoes possiveis de K simbolos que ganham o jogo
-        (setado para 3x3 por hora)
+                col_count1 = getBottomSequence(board, i, j, 1, self.m)
+                col_count2 = getBottomSequence(board, i, j, 2, self.m)
+                if col_count1 == self.k or col_count2 == self.k:
+                    return gameover
 
-        :return:uma matriz contendo as tuplas(coordenadas) das configuracoes vencedoras
-        """
-        end_state = [[(0, 0), (0, 1), (0, 2)],
-                     [(1, 0), (1, 1), (1, 2)],
-                     [(2, 0), (2, 1), (2, 2)],
-                     [(0, 0), (1, 0), (2, 0)],
-                     [(0, 1), (1, 1), (2, 1)],
-                     [(0, 2), (1, 2), (2, 2)],
-                     [(0, 0), (1, 1), (2, 2)],
-                     [(0, 2), (1, 1), (2, 0)]]
+                right_diag_count1 = getRightDiagSequence(board, i, j, 1, self.m, self.n)
+                right_diag_count2 = getRightDiagSequence(board, i, j, 2, self.m, self.n)
+                if right_diag_count1 == self.k or right_diag_count2 == self.k:
+                    return gameover
 
-        return end_state
+                left_diag_count1 = getLeftDiagSequence(board, i, j, 1, self.m)
+                left_diag_count2 = getLeftDiagSequence(board, i, j, 2, self.m)
+                if left_diag_count1 == self.k or left_diag_count2 == self.k:
+                    return gameover
 
     def maxValue(self, board, alpha, beta, depth):
         """
@@ -155,6 +164,7 @@ class Game:
         :return: Retorna o número de pontos acumulados pelo bot - número de pontos acumulados pelo outro jogador
 
         """
+        self.player = self.min
         depth += 1
         if self.hasEnded(board) or depth == self.maxDepth:
             return self.judge(board)
@@ -162,12 +172,14 @@ class Game:
         # Obtem todas as possiveis jogadas.
         possible_moves = self.getValidMoves(board)
         # Armazena a jogada que tem o melhor score.
-        bestScore = -100
+        bestScore = -1000
         for possible_move in possible_moves:
             new_game_state = eval(repr(board))
             # bot joga.
             x, y = possible_move
-            new_game_state[x][y] = self.bot
+
+            new_game_state[x][y] = self.player
+
             # Obtem o minimo do proximo nivel (MIN).
             score = self.minValue(new_game_state, alpha, beta, depth)
             # Pega o maior score dos piores analisados.
@@ -191,6 +203,7 @@ class Game:
         :return: Retorna o número de pontos acumulados pelo jogador - número de pontos acumulados pelo outro jogador
 
         """
+        self.player = self.max
         depth += 1
         if self.hasEnded(board) or depth == self.maxDepth:
             return self.judge(board)
@@ -198,7 +211,7 @@ class Game:
         # Obtem todas as possiveis jogadas.
         possible_moves = self.getValidMoves(board)
         # Armazena a jogada que tem o pior score.
-        bestScore = 100
+        bestScore = 1000
         for possible_move in possible_moves:
             new_game_state = eval(repr(board))
             # Jogador joga.
@@ -229,16 +242,17 @@ class Game:
         possible_moves = self.getValidMoves(self.state)
         if not possible_moves:
             return None
-        bestScore = -100
-        alpha = -100
-        beta = 100
+        bestScore = -10000
+        alpha = -10000
+        beta = 10000
         move = None
         depth = -1
+        self.player = self.max
         if len(possible_moves) > 1:
             for possible_move in possible_moves:
                 new_game_state = eval(repr(self.state))
                 x, y = possible_move
-                new_game_state[x][y] = self.bot
+                new_game_state[x][y] = self.player
                 score = self.minValue(new_game_state, alpha, beta, depth)
                 # Pega o maior score dos piores analisados.
                 if score >= bestScore:
