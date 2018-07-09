@@ -34,7 +34,7 @@ class Game:
         for i in range(len(start_state)):
             state[int(i / self.m)][i % self.m] = start_state[i]
 
-        self.state = [0, state, None]
+        self.state = state
 
     def getValidMoves(self, board):
         """
@@ -44,6 +44,8 @@ class Game:
         """
         possible_moves = list()
         for i in range(self.m):
+            print(board[i])
+
             for j in range(self.n):
                 if board[i][j] == 0:
                     possible_moves.append((i, j))
@@ -197,3 +199,4 @@ class Game:
             move = possible_moves[0]
 
         return move
+
