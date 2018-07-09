@@ -1,5 +1,5 @@
 import sys
-from Problem import Problem
+from Game import Game
 import time
 
 
@@ -12,18 +12,16 @@ def main():
 
     m = int(sys.argv[1])
     n = int(sys.argv[2])
-    player_index = int(sys.argv[3])
-    symbols_count = int(sys.argv[4])
-    start_state = [int(pos) for pos in sys.argv[5:]]
+    j = int(sys.argv[3])
+    k = int(sys.argv[4])
+    state = [int(pos) for pos in sys.argv[5:]]
 
-    if len(start_state) != m * n:
+    if len(state) != m * n:
         print('O estado do jogo deve ter {} elementos'.format(m * n))
         sys.exit(-1)
 
-    p = Problem(m, n, player_index, symbols_count, start_state)
-    next_action = p.get_action(p.start_state, 15 if m * n < 12 else symbols_count + 5)
-    print(next_action[2])
-
+    p = Game(m, n, j, k, state)
+    print(p.botDecision())
 
 if __name__ == '__main__':
     main()
