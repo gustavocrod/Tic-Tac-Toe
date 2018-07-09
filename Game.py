@@ -113,9 +113,14 @@ class Game:
                      [(0, 2), (1, 1), (2, 0)]]
         return end_state
 
-    def maxValue(self, board):
+    def maxValue(self, board, alpha, beta):
         """
         Checka se o jogo foi finalizado (vitoria ou empate)
+        No nível MAX, antes de avaliar a próxima possível jogada e suas respectivas contra-jogadas (sub-árvore),
+        o melhor valor (alpha) encontrado é comparado com o valor beta.
+        Se o alpha for maior,
+            então aborta a busca naquele nó.
+
         :param board:
         :return: +1 para vitoria do bot
                  -1 para adversario
@@ -134,16 +139,23 @@ class Game:
             x, y = possible_move
             new_game_state[x][y] = self.bot
             # Obtem o minimo do proximo nivel (MIN).
-            score = self.minValue(new_game_state)
+            score = self.minValue(new_game_state, alpha, beta)
             # Pega o maior score dos piores analisados.
             if score >= bestScore:
                 bestScore = score
+                alpha = bestScore
+            if alpha >= beta:
+                return alpha
 
         return bestScore
 
-    def minValue(self, board):
+    def minValue(self, board, alpha, beta):
         """
         Checka se o jogo foi finalizado (vitoria ou empate)
+        No nível MIN, antes de avaliar a próxima jogada e suas respectivas contra-jogadas (sub-árvore),
+        o melhor valor (beta) encontrado é comparado com o valor alpha.
+        Se o beta for menor,
+            então aborte a busca naquele nó.
         :param board:
         :return: +1 para vitoria do bot
                  -1 para adversario
@@ -162,10 +174,13 @@ class Game:
             x, y = possible_move
             new_game_state[x][y] = self.player
             # Obtem o maximo do proximo nivel (MAX).
-            score = self.maxValue(new_game_state) #recursividade alternada
+            score = self.maxValue(new_game_state, alpha, beta) #recursividade alternada
             # Pega o menor score dos melhores analisados.
             if score <= bestScore:
                 bestScore = score
+                beta = bestScore
+            if beta <= alpha:
+                return beta
 
         return bestScore
 
@@ -182,6 +197,8 @@ class Game:
         """
         possible_moves = self.getValidMoves(self.state)
         bestScore = -100
+        alpha = -100
+        beta = 100
 
         if len(possible_moves) > 1:
             for possible_move in possible_moves:
@@ -189,11 +206,14 @@ class Game:
 
                 px, py = possible_move
                 new_game_state[px][py] = 1
-                score = self.minValue(new_game_state)
+                score = self.minValue(new_game_state, alpha, beta)
                 # Pega o maior score dos piores analisados.
                 if score >= bestScore:
                     move = possible_move
                     bestScore = score
+                    alpha = bestScore
+                if alpha >= beta:
+                    break #poda
         else:
             # Apenas uma única jogada, esta será a jogada do bot.
             move = possible_moves[0]
