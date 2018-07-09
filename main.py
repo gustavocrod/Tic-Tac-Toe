@@ -1,13 +1,12 @@
 import sys
 from Game import Game
-import time
+from util import *
+
 
 
 def main():
     if len(sys.argv) < 5:
-        print(
-            'Utilização: python3 {} <linhas> <colunas> <jogador> <n de simbolos para vencer> <config do estado>'.format(
-                sys.argv[0]))
+        usage()
         sys.exit(-1)
 
     m = int(sys.argv[1])
@@ -17,11 +16,15 @@ def main():
     state = [int(pos) for pos in sys.argv[5:]]
 
     if len(state) != m * n:
-        print('O estado do jogo deve ter {} elementos'.format(m * n))
+        usageTable(m, n)
         sys.exit(-1)
 
     p = Game(m, n, j, k, state)
-    print(p.botDecision())
+    decision = p.botDecision()
+    if decision:
+        print(decision[0], decision[1])
+    else:
+        print("Fim de jogo!")
 
 if __name__ == '__main__':
     main()
