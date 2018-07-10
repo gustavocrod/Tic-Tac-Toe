@@ -30,7 +30,7 @@ class Game:
 
         self.player = j
         self.oponent = 2 if j == 1 else 1
-        self.maxDepth = 3
+        self.maxDepth = 10
 
 
     def formatState(self, start_state):
@@ -162,8 +162,7 @@ class Game:
             então aborta a busca naquele nó.
 
         :param board:
-        :return: Retorna o número de pontos acumulados pelo bot - número de pontos acumulados pelo outro jogador
-
+        :return: Retorna o número de pontos acumulados pelo bot
         """
         self.player = self.min
         depth += 1
@@ -178,7 +177,6 @@ class Game:
             new_game_state = eval(repr(board))
             # bot joga.
             x, y = possible_move
-
             new_game_state[x][y] = self.max
 
             # Obtem o minimo do proximo nivel (MIN).
@@ -201,7 +199,7 @@ class Game:
         Se o beta for menor,
             então aborte a busca naquele nó.
         :param board:
-        :return: Retorna o número de pontos acumulados pelo jogador - número de pontos acumulados pelo outro jogador
+        :return: Retorna o número de pontos acumulados pelo jogador
 
         """
 
@@ -253,7 +251,7 @@ class Game:
             for possible_move in possible_moves:
                 new_game_state = eval(repr(self.state))
                 x, y = possible_move
-                new_game_state[x][y] = self.player
+                new_game_state[x][y] = self.max
                 score = self.minValue(new_game_state, alpha, beta, depth)
                 # Pega o maior score dos piores analisados.
                 if score >= bestScore:
