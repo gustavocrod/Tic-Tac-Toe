@@ -48,6 +48,7 @@ class Game:
         :param board:
         :return: retorna as posicoes que ainda estao vazias
         """
+
         possible_moves = list()
         for i in range(self.m):
             for j in range(self.n):
@@ -96,9 +97,9 @@ class Game:
         self.oponent = 2 if self.player == 1 else 1
 
         if self.isPLayerWinner(board, self.player):
-            utility += 10
+            utility += 100
         elif self.isPLayerWinner(board, self.oponent):
-            utility -= 100
+            utility -= 1000
 
         else:
             for i in range(0, self.m):
@@ -108,10 +109,10 @@ class Game:
                     utility += getRightDiagSequence(board, i, j, self.player, self.m, self.n)
                     utility += getLeftDiagSequence(board, i, j, self.player, self.m)
 
-                    utility -= 10 * getRightSequence(board, i, j, self.oponent, self.n)
-                    utility -= 10 * getBottomSequence(board, i, j, self.oponent, self.m)
-                    utility -= 10 * getRightDiagSequence(board, i, j, self.oponent, self.m, self.n)
-                    utility -= 10 * getLeftDiagSequence(board, i, j, self.oponent, self.m)
+                    utility -= 100 * getRightSequence(board, i, j, self.oponent, self.n)
+                    utility -= 100 * getBottomSequence(board, i, j, self.oponent, self.m)
+                    utility -= 100 * getRightDiagSequence(board, i, j, self.oponent, self.m, self.n)
+                    utility -= 100 * getLeftDiagSequence(board, i, j, self.oponent, self.m)
 
         return utility
 
@@ -178,7 +179,7 @@ class Game:
             # bot joga.
             x, y = possible_move
 
-            new_game_state[x][y] = self.player
+            new_game_state[x][y] = self.max
 
             # Obtem o minimo do proximo nivel (MIN).
             score = self.minValue(new_game_state, alpha, beta, depth)
@@ -203,6 +204,7 @@ class Game:
         :return: Retorna o número de pontos acumulados pelo jogador - número de pontos acumulados pelo outro jogador
 
         """
+
         self.player = self.max
         depth += 1
         if self.hasEnded(board) or depth == self.maxDepth:
@@ -216,7 +218,7 @@ class Game:
             new_game_state = eval(repr(board))
             # Jogador joga.
             x, y = possible_move
-            new_game_state[x][y] = self.player
+            new_game_state[x][y] = self.min
             # Obtem o maximo do proximo nivel (MAX).
             score = self.maxValue(new_game_state, alpha, beta, depth) #recursividade alternada
             # Pega o menor score dos melhores analisados.
@@ -247,7 +249,6 @@ class Game:
         beta = 10000
         move = None
         depth = -1
-        self.player = self.max
         if len(possible_moves) > 1:
             for possible_move in possible_moves:
                 new_game_state = eval(repr(self.state))
