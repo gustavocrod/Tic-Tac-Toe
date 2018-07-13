@@ -192,7 +192,7 @@ class Game:
         if len(possible_moves) > 1:
             for possible_move in possible_moves:
                 new_game_state = self.makeMove(self.state, possible_move, self.max)
-                val = self.alphabeta(new_game_state, getOpponent(self.player), alpha, beta, depth)
+                val = self.alphabeta(new_game_state, self.min, alpha, beta, depth)
 
                 node = {"val": val, "move": possible_move}
 
@@ -202,8 +202,8 @@ class Game:
                 elif val == a:
                     choices.append(node)
         else:
-            self.moveChoice = [possible_moves[0]] # apenas 1 jogada
-            return self.moveChoice[0]
+            self.moveChoice = possible_moves[0] # apenas 1 jogada
+            return self.moveChoice
 
         self.moveChoice = self.getScore(choices)
         return self.moveChoice
