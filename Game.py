@@ -1,11 +1,4 @@
-"""
-    Baseado em: Aprenda a aplicar a inteligencia artificial em seus jogos: Teoria dos Jogos Minimax
-    Disponivel em <http://aimotion.blogspot.com/2009/01/aprenda-aplicar-inteligencia-artificial.html>
-
-"""
-import os
 import math
-import random
 from util import *
 
 class Game:
@@ -32,7 +25,7 @@ class Game:
         self.formatState(start_state)
         self.moveChoice = None
         self.player = j
-        self.maxDepth = 15
+        self.maxDepth = 10
         self.baseScore = 0
 
 
@@ -41,14 +34,7 @@ class Game:
         for i in range(len(start_state)):
             state[int(i / self.m)][i % self.m] = start_state[i]
 
-        #print("player", self.max)
-
-        print("Initial state:")
         self.state = state
-        for row in self.state:
-            print(row)
-        #input()
-        #os.system("clear")
 
     def getValidMoves(self, board):
         """
@@ -141,6 +127,7 @@ class Game:
         Se for a jogada do bot, retorna o maior resultado, senao o menor (minimax)
 
         para se tem algum vencedor, ou se chegou em maxDepth
+
         :param player: jogador da vez
         :param state: o estado atual do jogo
         :param alpha:
@@ -167,7 +154,7 @@ class Game:
             if self.isMaxTurn(player):
                 alpha = max(val, alpha)
                 if alpha >= beta:
-                    break
+                    break #pode
             else:
                 beta = min(val, beta)
                 if beta < alpha:
@@ -183,6 +170,9 @@ class Game:
             Para cada um desses estados, adicione o resultado minimax que resulta a lista de pontuação
             Se for a vez de “max” jogar, retorne a maior pontuação da lista de resultados
             Se for a vez de “min” jogar, retorne a menor pontuação da lista de resultados
+
+        vai adicionando as jogadas em uma lista de possiveis jogadas.
+        Escolhe a jogada de melhor custo
 
         :return: uma tupla que representa proxima jogada (x, y)
         """
