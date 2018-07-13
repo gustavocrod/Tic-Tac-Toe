@@ -3,7 +3,6 @@ from util import *
 
 class Game:
     """
-
         0 se o quadrado estiver vazio, 1 se o quadrado for ocupado por uma jogada do "X"
         e 2 se o quadrado for ocupado por uma jogada do "O".
 
@@ -23,10 +22,9 @@ class Game:
         self.max = j  # jogador max - bot
 
         self.formatState(start_state)
-        self.moveChoice = None
-        self.player = j
-        self.maxDepth = 10
-        self.baseScore = 0
+        self.moveChoice = None # jogada
+        self.maxDepth = 10 # profundidade maxima
+        self.baseScore = 0 # score base
 
 
     def formatState(self, start_state):
@@ -86,6 +84,11 @@ class Game:
         return new_game_state
 
     def getScore(self, candidate_moves):
+        """
+
+        :param candidate_moves: lista com os possiveis movimentos
+        :return: melhor jogada
+        """
         max = -1000
         best_move = list()
         for node in candidate_moves:
@@ -95,14 +98,46 @@ class Game:
         return best_move
 
     def evaluateState(self, state, depth):
-        if self.isPLayerWinner(state, self.max):
+        """
+        HEURISTICA - Ajuda do Wolgan
+
+        :param state:
+        :param depth:
+        :return: retorna o score base - profundidade, se ganhou
+                 retorna profundidade - score base, se perdeu
+                 retorna 0 se empatou
+                 retorna uma pontuação com base no tamanho da sequencia do jogador com maior sequencia, se nao chegou a estado terminal
+        """
+        if self.isPLayerWinner(state, self.max): # ganha
             return self.baseScore - depth
-        elif self.isPLayerWinner(state, self.min):
+        elif self.isPLayerWinner(state, self.min): # perde
             return depth - self.baseScore
-        else:
+        elif len(self.getValidMoves(state)) == 0: # empate
             return 0
 
+        else:
+            sequence_count = list()
+            for i in range(0, self.m):
+                for j in range(0, self.n): # Heuristica construida com a ajuda do Wolgan
+                    sequence_count.append(getRightSequence(state, i, j, self.max, self.n)),
+                    sequence_count.append(getBottomSequence(state, i, j, self.max, self.m)),
+                    sequence_count.append(getRightDiagSequence(state, i, j, self.max, self.m, self.n)),
+                    sequence_count.append(getLeftDiagSequence(state, i, j, self.max, self.m))
+
+                    sequence_count.append(-1 * (getRightSequence(state, i, j, self.min, self.n) * 3)),
+                    sequence_count.append(-1 * (getBottomSequence(state, i, j, self.min, self.m) * 3)),
+                    sequence_count.append(-1 * (getRightDiagSequence(state, i, j, self.min, self.m, self.n) * 3)),
+                    sequence_count.append(-1 * (getLeftDiagSequence(state, i, j, self.min, self.m) * 3))
+
+            return max(sequence_count, key=lambda x: abs(x))
+
     def terminalState(self, state, player, depth):
+        """
+        :param state: estado atual
+        :param player: jogador atual
+        :param depth: profundidade atual
+        :return: retorna true se tem um vencedor, se empatou ou se chegou numa profundidade maxima
+        """
         if len(self.getValidMoves(state)) == 0:
             return True
 
@@ -110,14 +145,16 @@ class Game:
             return True
 
     def isMaxTurn(self, player):
+        """
+        Retorna se eh a vez do max jogar
+        :param player:
+        :return:
+        """
         return player == self.max
 
     def alphabeta(self, state, player, alpha, beta, depth):
-
         """
-
         Testa todas jogadas possiveis
-        Armazena a jogada que possui o melhor score
         se possuir mais de uma jogada disponivel
         percorre todas as jogadas e obtem o prox nivel: min
         por fim fica com o melhor score dos piores analisados,
@@ -142,59 +179,56 @@ class Game:
             val = 99999
 
         if self.terminalState(state, player, depth):
-            return self.evaluateState(state, depth)
+            return self.evaluateState(state, depth) # retorna o melhor estado da proxima jogada
 
         for move in valid_moves:
             next_move = self.makeMove(state, move, player)
-            if self.isMaxTurn(player):
-                val = max(val, self.alphabeta(next_move, getOpponent(player), alpha, beta, depth + 1))
-            else:
-                val = min(val, self.alphabeta(next_move, getOpponent(player), alpha, beta, depth + 1))
+            if self.isMaxTurn(player): # se for jogada do max
+                val = max(val, self.alphabeta(next_move, getOpponent(player), alpha, beta, depth + 1)) # melhor valor de min
+            else: # se for jogada de min
+                val = min(val, self.alphabeta(next_move, getOpponent(player), alpha, beta, depth + 1)) # pior valor de max
 
-            if self.isMaxTurn(player):
+            if self.isMaxTurn(player): # se for a jogada de max
                 alpha = max(val, alpha)
-                if alpha >= beta:
-                    break #pode
-            else:
+                if alpha >= beta: # se alpha for melhor q beta
+                    break #poda pois ele vai jogar a melhor
+            else: # jogada de min
                 beta = min(val, beta)
-                if beta < alpha:
-                    break #poda
-        return val
+                if beta < alpha: # se beta pior q alpha
+                    break #poda pois ele vai jogar a pior
+        return val # retorna o melhor valor. Min = pior, Max = maior
 
     def botDecision(self):
         """
-        Definicao algoritmica:
-            Se o jogo acabou, retorne a pontuação da perspectiva de “max”
-            Do contrário, obtenha uma lista de novos estados de jogo para todos os possíveis movimentos.
-            Cria uma lista de pontuação
-            Para cada um desses estados, adicione o resultado minimax que resulta a lista de pontuação
-            Se for a vez de “max” jogar, retorne a maior pontuação da lista de resultados
-            Se for a vez de “min” jogar, retorne a menor pontuação da lista de resultados
-
+        Começa a primeira jogada como max
         vai adicionando as jogadas em uma lista de possiveis jogadas.
+        Faz a possivel jogada
+        val recebe o valor de alpha beta,
+        armazena o melhor val de todas as melhores jogadas
+        armazena essas melhores jogadas
         Escolhe a jogada de melhor custo
+
 
         :return: uma tupla que representa proxima jogada (x, y)
         """
         possible_moves = self.getValidMoves(self.state)
-        self.baseScore = len(possible_moves)+1
+        self.baseScore = len(possible_moves) + 1 # score base eh quantas jogadas ele pode jogar + 1
         if not possible_moves:
             return None
 
         if len(possible_moves) == self.m * self.n:
             return (math.floor(self.m/2), math.floor(self.n/2)) # retorna o meio - estatisticamente melhor
 
-        a = -20
-        alpha = -20
-        beta = 20
+        a = -99999
+        alpha = -99999
+        beta = 9999999
         depth = 0
         choices = []
         if len(possible_moves) > 1:
             for possible_move in possible_moves:
                 new_game_state = self.makeMove(self.state, possible_move, self.max)
-                val = self.alphabeta(new_game_state, getOpponent(self.player), alpha, beta, depth)
-
-                node = {"val": val, "move": possible_move}
+                val = self.alphabeta(new_game_state, self.min, alpha, beta, depth) # jogada do min
+                node = {"val": val, "move": possible_move} # armazena o a melhor jogada
 
                 if val > a:
                     a = val

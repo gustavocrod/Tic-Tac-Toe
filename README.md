@@ -3,6 +3,8 @@ Implementação de MiniMax e Poda Alpha Beta para o problema TicTacToe escaláve
 
 (M x N x k problem).
 
+Por Gustavo Cardozo Rodrigues
+
 Baseado em: Aprenda a aplicar a inteligencia artificial em seus jogos: Teoria dos Jogos Minimax
 Disponivel em <http://aimotion.blogspot.com/2009/01/aprenda-aplicar-inteligencia-artificial.html>
 
