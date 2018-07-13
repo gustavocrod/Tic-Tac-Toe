@@ -33,10 +33,11 @@ def getRightSequence(state, i, j, player, n):
     if position_symbol == 0 or position_symbol != player:
         return 0
     count = 1
-    col = i + 1
+    col = j + 1
     while (col < n) and state[i][col] == player:
         count += 1
         col += 1
+
     return count
 
 def getBottomSequence(state, i, j, player, m):
@@ -59,6 +60,7 @@ def getBottomSequence(state, i, j, player, m):
     position_symbol = state[i][j]
     if position_symbol == 0 or position_symbol != player:
         return 0
+
     count = 1
     row = i + 1
     while (row < m) and state[row][j] == player:
@@ -129,3 +131,6 @@ def getLeftDiagSequence(state, i, j, player, m):
         row += 1
         col -= 1
     return count
+
+def getOpponent(player):
+    return 2 if player == 1 else 1

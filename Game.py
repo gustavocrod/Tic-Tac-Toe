@@ -3,7 +3,9 @@
     Disponivel em <http://aimotion.blogspot.com/2009/01/aprenda-aplicar-inteligencia-artificial.html>
 
 """
-
+import os
+import math
+import random
 from util import *
 
 class Game:
@@ -24,13 +26,14 @@ class Game:
         self.m = m
         self.n = n
         self.k = k
-        self.formatState(start_state)
         self.min = 2 if j == 1 else 1
-        self.max = j #jogador max - bot
+        self.max = j  # jogador max - bot
 
+        self.formatState(start_state)
+        self.moveChoice = None
         self.player = j
-        self.oponent = 2 if j == 1 else 1
-        self.maxDepth = 10
+        self.maxDepth = 15
+        self.baseScore = 0
 
 
     def formatState(self, start_state):
@@ -38,9 +41,14 @@ class Game:
         for i in range(len(start_state)):
             state[int(i / self.m)][i % self.m] = start_state[i]
 
+        #print("player", self.max)
+
+        print("Initial state:")
         self.state = state
         for row in self.state:
             print(row)
+        #input()
+        #os.system("clear")
 
     def getValidMoves(self, board):
         """
@@ -64,6 +72,7 @@ class Game:
         :param player:
         :return:
         """
+
         for i in range(0, self.m):
             for j in range(0, self.n):
                 row_count = getRightSequence(state, i, j, player, self.n)
@@ -71,7 +80,7 @@ class Game:
                     return True
 
                 col_count = getBottomSequence(state, i, j, player, self.m)
-                if col_count >= self.k:
+                if col_count == self.k:
                     return True
 
                 right_diag_count = getRightDiagSequence(state, i, j, player, self.m, self.n)
@@ -82,186 +91,130 @@ class Game:
                 if left_diag_count == self.k:
                     return True
 
-    def judge(self, board):
-        """
-        HEURISTICA
+        return False
 
-        Verifica o estado final do tabuleiro
-        +10 para minha vitoria (meu bot)
-        -10 para vitoria do adversario
-        0 para empate
-        :param board:
-        :return:
-        """
-        utility = 0
-        self.oponent = 2 if self.player == 1 else 1
+    def makeMove(self, state, move, player):
+        x, y = move
+        new_game_state = eval(repr(state))
+        new_game_state[x][y] = player
+        return new_game_state
 
-        if self.isPLayerWinner(board, self.player):
-            utility += 100
-        elif self.isPLayerWinner(board, self.oponent):
-            utility -= 1000
+    def getScore(self, candidate_moves):
+        max = -1000
+        best_move = list()
+        for node in candidate_moves:
+            if node["val"] > max:
+                max = node["val"]
+                best_move = node["move"]
+        return best_move
 
+    def evaluateState(self, state, depth):
+        if self.isPLayerWinner(state, self.max):
+            return self.baseScore - depth
+        elif self.isPLayerWinner(state, self.min):
+            return depth - self.baseScore
         else:
-            for i in range(0, self.m):
-                for j in range(0, self.n):
-                    utility += getRightSequence(board, i, j, self.player, self.n)
-                    utility += getBottomSequence(board, i, j, self.player, self.m)
-                    utility += getRightDiagSequence(board, i, j, self.player, self.m, self.n)
-                    utility += getLeftDiagSequence(board, i, j, self.player, self.m)
+            return 0
 
-                    utility -= 100 * getRightSequence(board, i, j, self.oponent, self.n)
-                    utility -= 100 * getBottomSequence(board, i, j, self.oponent, self.m)
-                    utility -= 100 * getRightDiagSequence(board, i, j, self.oponent, self.m, self.n)
-                    utility -= 100 * getLeftDiagSequence(board, i, j, self.oponent, self.m)
+    def terminalState(self, state, player, depth):
+        if len(self.getValidMoves(state)) == 0:
+            return True
 
-        return utility
+        if self.isPLayerWinner(state, getOpponent(player)) or self.isPLayerWinner(state, player) or depth == self.maxDepth:
+            return True
 
+    def isMaxTurn(self, player):
+        return player == self.max
 
+    def alphabeta(self, state, player, alpha, beta, depth):
 
-    def hasEnded(self, board):
         """
-        Checa se o jogo foi finalizado. Isso acontece se um dos jogadores completou uma sequencia
-        continua de k simbolos ou se a matriz esta cheia.
-        :param board:
+
+        Testa todas jogadas possiveis
+        Armazena a jogada que possui o melhor score
+        se possuir mais de uma jogada disponivel
+        percorre todas as jogadas e obtem o prox nivel: min
+        por fim fica com o melhor score dos piores analisados,
+        ja q min vai piorar eles.
+
+        Recursivamente, chama alphabeta para todos os movimentos possiveis
+        Se for a jogada do bot, retorna o maior resultado, senao o menor (minimax)
+
+        para se tem algum vencedor, ou se chegou em maxDepth
+        :param player: jogador da vez
+        :param state: o estado atual do jogo
+        :param alpha:
+        :param beta:
         :return:
         """
-        valid_actions = self.getValidMoves(board)
-        gameover = True
-        if len(valid_actions) == 0:
-            return gameover
+        valid_moves = self.getValidMoves(state)
 
-        for i in range(0, self.m):
-            for j in range(0, self.n):
-                row_count1 = getRightSequence(board, i, j, 1, self.n)
-                row_count2 = getRightSequence(board, i, j, 2, self.n)
-                if row_count1 == self.k or row_count2 == self.k:
-                    return gameover
+        if self.isMaxTurn(player):
+            val = -99999
+        else:
+            val = 99999
 
-                col_count1 = getBottomSequence(board, i, j, 1, self.m)
-                col_count2 = getBottomSequence(board, i, j, 2, self.m)
-                if col_count1 == self.k or col_count2 == self.k:
-                    return gameover
+        if self.terminalState(state, player, depth):
+            return self.evaluateState(state, depth)
 
-                right_diag_count1 = getRightDiagSequence(board, i, j, 1, self.m, self.n)
-                right_diag_count2 = getRightDiagSequence(board, i, j, 2, self.m, self.n)
-                if right_diag_count1 == self.k or right_diag_count2 == self.k:
-                    return gameover
+        for move in valid_moves:
+            next_move = self.makeMove(state, move, player)
+            if self.isMaxTurn(player):
+                val = max(val, self.alphabeta(next_move, getOpponent(player), alpha, beta, depth + 1))
+            else:
+                val = min(val, self.alphabeta(next_move, getOpponent(player), alpha, beta, depth + 1))
 
-                left_diag_count1 = getLeftDiagSequence(board, i, j, 1, self.m)
-                left_diag_count2 = getLeftDiagSequence(board, i, j, 2, self.m)
-                if left_diag_count1 == self.k or left_diag_count2 == self.k:
-                    return gameover
-
-    def maxValue(self, board, alpha, beta, depth):
-        """
-        Checa se o jogo foi finalizado (Vitória ou empate) ou se está na profundidade máxima de busca.
-
-        No nível MAX, antes de avaliar a próxima possível jogada e suas respectivas contra-jogadas (sub-árvore),
-        o melhor valor (alpha) encontrado é comparado com o valor beta.
-        Se o alpha for maior,
-            então aborta a busca naquele nó.
-
-        :param board:
-        :return: Retorna o número de pontos acumulados pelo bot
-        """
-        self.player = self.min
-        depth += 1
-        if self.hasEnded(board) or depth == self.maxDepth:
-            return self.judge(board)
-
-        # Obtem todas as possiveis jogadas.
-        possible_moves = self.getValidMoves(board)
-        # Armazena a jogada que tem o melhor score.
-        bestScore = -1000
-        for possible_move in possible_moves:
-            new_game_state = eval(repr(board))
-            # bot joga.
-            x, y = possible_move
-            new_game_state[x][y] = self.max
-
-            # Obtem o minimo do proximo nivel (MIN).
-            score = self.minValue(new_game_state, alpha, beta, depth)
-            # Pega o maior score dos piores analisados.
-            if score >= bestScore:
-                bestScore = score
-                alpha = bestScore
-            if alpha >= beta:
-                return alpha
-
-        return bestScore
-
-    def minValue(self, board, alpha, beta, depth):
-        """
-        Checa se o jogo foi finalizado (Vitória ou empate) ou se está na profundidade máxima de busca.
-
-        No nível MIN, antes de avaliar a próxima jogada e suas respectivas contra-jogadas (sub-árvore),
-        o melhor valor (beta) encontrado é comparado com o valor alpha.
-        Se o beta for menor,
-            então aborte a busca naquele nó.
-        :param board:
-        :return: Retorna o número de pontos acumulados pelo jogador
-
-        """
-
-        self.player = self.max
-        depth += 1
-        if self.hasEnded(board) or depth == self.maxDepth:
-            return self.judge(board)
-
-        # Obtem todas as possiveis jogadas.
-        possible_moves = self.getValidMoves(board)
-        # Armazena a jogada que tem o pior score.
-        bestScore = 1000
-        for possible_move in possible_moves:
-            new_game_state = eval(repr(board))
-            # Jogador joga.
-            x, y = possible_move
-            new_game_state[x][y] = self.min
-            # Obtem o maximo do proximo nivel (MAX).
-            score = self.maxValue(new_game_state, alpha, beta, depth) #recursividade alternada
-            # Pega o menor score dos melhores analisados.
-            if score <= bestScore:
-                bestScore = score
-                beta = bestScore
-            if beta <= alpha:
-                return beta
-
-        return bestScore
+            if self.isMaxTurn(player):
+                alpha = max(val, alpha)
+                if alpha >= beta:
+                    break
+            else:
+                beta = min(val, beta)
+                if beta < alpha:
+                    break #poda
+        return val
 
     def botDecision(self):
         """
-        Testa todas jogadas possiveis
-        Armazena a joga que possui o melhor score
-        se possuir mais de uma joga disponivel
-            percorre todas as jogadas e obtem o prox nivel: min
-            por fim fica com o melhor score dos piores analisados,
-            ja q min vai piorar eles.
+        Definicao algoritmica:
+            Se o jogo acabou, retorne a pontuação da perspectiva de “max”
+            Do contrário, obtenha uma lista de novos estados de jogo para todos os possíveis movimentos.
+            Cria uma lista de pontuação
+            Para cada um desses estados, adicione o resultado minimax que resulta a lista de pontuação
+            Se for a vez de “max” jogar, retorne a maior pontuação da lista de resultados
+            Se for a vez de “min” jogar, retorne a menor pontuação da lista de resultados
 
         :return: uma tupla que representa proxima jogada (x, y)
         """
         possible_moves = self.getValidMoves(self.state)
+        self.baseScore = len(possible_moves)+1
         if not possible_moves:
             return None
-        bestScore = -10000
-        alpha = -10000
-        beta = 10000
-        move = None
-        depth = -1
+
+        if len(possible_moves) == self.m * self.n:
+            return (math.floor(self.m/2), math.floor(self.n/2)) # retorna o meio - estatisticamente melhor
+
+        a = -20
+        alpha = -20
+        beta = 20
+        depth = 0
+        choices = []
         if len(possible_moves) > 1:
             for possible_move in possible_moves:
-                new_game_state = eval(repr(self.state))
-                x, y = possible_move
-                new_game_state[x][y] = self.max
-                score = self.minValue(new_game_state, alpha, beta, depth)
-                # Pega o maior score dos piores analisados.
-                if score >= bestScore:
-                    move = possible_move
-                    bestScore = score
-                    alpha = bestScore
-                if alpha >= beta:
-                    break #poda
-        else:
-            move = possible_moves[0] # apenas 1 jogada
+                new_game_state = self.makeMove(self.state, possible_move, self.max)
+                val = self.alphabeta(new_game_state, getOpponent(self.player), alpha, beta, depth)
 
-        return move
+                node = {"val": val, "move": possible_move}
+
+                if val > a:
+                    a = val
+                    choices = [node]
+                elif val == a:
+                    choices.append(node)
+        else:
+            self.moveChoice = [possible_moves[0]] # apenas 1 jogada
+            return self.moveChoice[0]
+
+        self.moveChoice = self.getScore(choices)
+        return self.moveChoice
 
