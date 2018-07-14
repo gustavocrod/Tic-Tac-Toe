@@ -23,7 +23,7 @@ class Game:
 
         self.formatState(start_state)
         self.moveChoice = None # jogada
-        self.maxDepth = 10 # profundidade maxima
+        self.maxDepth = 6 # profundidade maxima
         self.baseScore = 0 # score base
 
 
@@ -99,7 +99,7 @@ class Game:
 
     def evaluateState(self, state, depth):
         """
-        HEURISTICA - Ajuda do Wolgan
+        HEURISTICA estado nao-final - Ajuda do Wolgan
 
         :param state:
         :param depth:
@@ -216,8 +216,8 @@ class Game:
         if not possible_moves:
             return None
 
-        if len(possible_moves) == self.m * self.n:
-            return (math.floor(self.m/2), math.floor(self.n/2)) # retorna o meio - estatisticamente melhor
+        #if len(possible_moves) == self.m * self.n:
+         #   return (math.floor(self.m/2), math.floor(self.n/2)) # retorna o meio - estatisticamente melhor
 
         a = -99999
         alpha = -99999
