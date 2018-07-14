@@ -216,8 +216,8 @@ class Game:
         if not possible_moves:
             return None
 
-        #if len(possible_moves) == self.m * self.n:
-         #   return (math.floor(self.m/2), math.floor(self.n/2)) # retorna o meio - estatisticamente melhor
+        if len(possible_moves) == self.m * self.n:
+           return (math.floor(self.m/2), math.floor(self.n/2)) # retorna o meio - estatisticamente melhor
 
         a = -99999
         alpha = -99999
